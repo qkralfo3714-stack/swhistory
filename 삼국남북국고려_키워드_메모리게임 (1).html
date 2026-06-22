@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>삼국 & 남북국 & 고려 키워드 메모리 게임</title>
+<style>
+@font-face {
+  font-family: 'RoundedFixedsys';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+  font-weight: normal;
+  font-display: swap;
+}
+
+:root{
+  --sky-top:#5c94fc;
+  --sky-bot:#9bd2ff;
+  --cloud:#ffffff;
+  --ink:#181429;          /* dark outline */
+  --ink2:#2a2440;
+  --teal:#2f6b66;         /* celadon card body */
+  --teal-d:#234f4b;
+  --teal-l:#4f928c;
+  --celadon:#9fcab2;      /* vase glaze */
+  --celadon-d:#6fa589;
+  --paper:#fff7e6;        /* revealed front / panels */
+  --paper-d:#f3e4c0;
+  --gold:#ffd23d;
+  --gold-d:#e0a417;
+  --red:#ff5160;
+  --red-d:#c8303f;
+  --blue-hi:#7fc0ff;
+  --green:#3fbf5f;
+  --green-d:#249244;
+  --grass:#54b03a;
+  --grass-d:#2f7d24;
+  --dirt:#b86b2e;
+  --dirt-d:#7e441a;
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'RoundedFixedsys','DungGeunMo',monospace;
+  color:var(--ink);
+  background:linear-gradient(var(--sky-top),var(--sky-bot));
+  min-height:100vh;
+  overflow-x:hidden;
+  image-rendering:pixelated;
+  letter-spacing:.5px;
+  -webkit-font-smoothing:none;
+}
+
+/* ===== pixel cloud + ground decoration ===== */
+.clouds{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.cloud{position:absolute;width:96px;height:36px;background:var(--cloud);border-radius:18px;opacity:.9;
+  box-shadow:24px -14px 0 -4px var(--cloud),52px -6px 0 0 var(--cloud),-18px 0 0 -6px var(--cloud);}
+.cloud.c1{top:8%;left:6%;transform:scale(1.2);}
+.cloud.c2{top:18%;right:8%;transform:scale(.9);}
+.cloud.c3{top:42%;left:3%;transform:scale(.7);opacity:.7;}
+.ground{position:fixed;left:0;right:0;bottom:0;height:46px;z-index:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,var(--dirt) 0 16px,var(--dirt-d) 16px 32px);
+  border-top:8px solid var(--grass);
+  box-shadow:inset 0 8px 0 var(--grass-d);}
+.flower{position:fixed;bottom:34px;width:14px;height:14px;border-radius:50%;background:var(--blue-hi);
+  z-index:0;pointer-events:none;box-shadow:0 0 0 3px #2a6fae, 0 18px 0 -3px var(--grass-d);}
+.flower::after{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--gold);}
+.flower.f1{left:4%;} .flower.f2{right:4%;}
+
+/* ===== shell / shared pixel UI ===== */
+.app{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:10px 12px 70px;}
+
+/* chunky pixel border */
+.pixel{
+  background:var(--paper);
+  border:4px solid var(--ink);
+  box-shadow:
+    0 0 0 4px var(--ink),
+    inset -4px -4px 0 0 rgba(0,0,0,.18),
+    inset 4px 4px 0 0 rgba(255,255,255,.45),
+    6px 6px 0 0 rgba(0,0,0,.28);
+}
+
+/* top HUD bar */
+.hud{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 14px;margin:6px 4px 16px;background:linear-gradient(var(--sky-top),#3b73d6);
+  color:#fff;
+}
+.hud .icons{display:flex;gap:3px;}
+.hud .title{font-size:clamp(18px,4.5vw,30px);text-align:center;
+  text-shadow:3px 3px 0 var(--ink),-1px -1px 0 var(--ink);white-space:nowrap;}
+.hud svg{width:24px;height:24px;}
+@media(max-width:560px){
+  .hud{padding:6px 8px;}
+  .hud svg{width:17px;height:17px;}
+  .hud .icons{gap:1px;}
+  .hud .title{font-size:clamp(13px,4vw,22px);}
+}
+
+/* buttons */
+.btn{
+  font-family:inherit;font-size:18px;cursor:pointer;color:#fff;border:none;
+  padding:12px 18px;background:var(--green);
+  border:3px solid var(--ink);
+  box-shadow:0 0 0 3px var(--ink),inset -3px -3px 0 rgba(0,0,0,.25),inset 3px 3px 0 rgba(255,255,255,.4),4px 4px 0 rgba(0,0,0,.3);
+  text-shadow:2px 2px 0 rgba(0,0,0,.35);
+  transition:transform .05s, filter .1s;user-select:none;
+}
+.btn:hover{filter:brightness(1.08);}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 3px var(--ink),inset -3px -3px 0 rgba(0,0,0,.25);}
+.btn.alt{background:var(--gold);color:var(--ink);text-shadow:1px 1px 0 #fff7;}
+.btn.red{background:var(--red);}
+.btn.blue{background:#3b8ee0;}
+.btn.sm{font-size:14px;padding:8px 12px;}
+.btn:disabled{filter:grayscale(.7) brightness(.85);cursor:not-allowed;}
+
+/* ===== START SCREEN ===== */
+#startScreen{padding:18px 16px 26px;text-align:center;}
+.logo{
+  display:inline-block;padding:18px 22px;margin:6px auto 18px;background:var(--teal);color:#fff;
+}
+.logo .era{font-size:clamp(20px,5vw,34px);color:var(--gold);text-shadow:3px 3px 0 var(--ink);}
+.logo .sub{font-size:clamp(16px,4vw,26px);text-shadow:2px 2px 0 var(--ink);margin-top:6px;}
+.logo .vase-wrap{margin:10px auto 4px;width:84px;}
+.school{font-size:12px;color:var(--celadon);margin-top:8px;}
+
+.panel{padding:16px;margin:14px auto;max-width:560px;text-align:left;}
+.panel h3{margin:0 0 12px;font-size:20px;text-align:center;color:var(--ink);
+  text-shadow:1px 1px 0 #fff8;}
+.choices{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.choice{
+  font-family:inherit;font-size:16px;cursor:pointer;flex:1 1 120px;min-width:110px;
+  padding:12px 10px;text-align:center;background:var(--paper);color:var(--ink);
+  border:3px solid var(--ink);box-shadow:inset -3px -3px 0 rgba(0,0,0,.12),inset 3px 3px 0 #fff;
+}
+.choice small{display:block;font-size:11px;color:#5a5470;margin-top:4px;line-height:1.3;}
+.choice.on{background:var(--gold);box-shadow:inset -3px -3px 0 var(--gold-d),inset 3px 3px 0 #fff;}
+.choice:active{transform:translate(2px,2px);}
+.start-actions{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:6px;}
+
+/* how-to box */
+.howto{padding:14px 18px;margin:14px auto;max-width:620px;background:var(--paper);font-size:15px;line-height:1.7;}
+.howto h3{margin:0 0 8px;text-align:center;font-size:20px;}
+.howto .hi-y{background:var(--gold);padding:0 3px;}
+.howto .hi-b{background:var(--blue-hi);padding:0 3px;}
+.howto ol{margin:8px 0 0;padding-left:22px;}
+.howto li{margin:5px 0;}
+
+/* ===== GAME SCREEN ===== */
+#gameScreen{display:none;}
+.stats{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:stretch;
+  padding:10px;margin:0 4px 14px;background:var(--ink);
+}
+.stat{
+  background:var(--paper);border:3px solid var(--ink2);padding:6px 12px;text-align:center;min-width:78px;
+  box-shadow:inset -2px -2px 0 rgba(0,0,0,.12),inset 2px 2px 0 #fff;
+}
+.stat b{display:block;font-size:11px;color:#6b6480;}
+.stat span{font-size:20px;color:var(--ink);}
+.stat span.warn{color:var(--red-d);}
+
+.layout{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:880px){.layout{grid-template-columns:300px 1fr;align-items:start;}}
+
+/* hand of description cards */
+.hand{padding:12px;background:linear-gradient(180deg,#fff,var(--paper-d));}
+.hand h3{margin:0 0 10px;font-size:18px;text-align:center;
+  background:var(--teal);color:#fff;padding:6px;border:3px solid var(--ink);
+  box-shadow:inset -2px -2px 0 rgba(0,0,0,.2),inset 2px 2px 0 rgba(255,255,255,.25);}
+.handlist{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto;padding-right:4px;}
+@media(min-width:880px){.handlist{max-height:none;}}
+.dcard{
+  border:3px solid var(--ink);background:var(--paper);padding:8px 10px;font-size:13px;line-height:1.5;
+  box-shadow:inset -3px -3px 0 rgba(0,0,0,.1),inset 3px 3px 0 #fff;position:relative;
+  border-left:8px solid var(--gold-d);transition:.15s;
+}
+.dcard .tag{font-size:10px;color:#7a7490;}
+.dcard.done{background:#e8f5ea;border-left-color:var(--green-d);opacity:.92;}
+.dcard.done .answer{display:block;}
+.dcard .answer{display:none;font-size:15px;color:var(--green-d);margin-top:4px;}
+.dcard.hl{outline:4px solid var(--gold);outline-offset:2px;animation:pop .4s;}
+.dcard.cat-통치기구{border-left-color:#2a6fae;}
+.dcard.done.cat-통치기구{border-left-color:var(--green-d);}
+@keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.06);}100%{transform:scale(1);}}
+
+/* board */
+.boardwrap{padding:12px;background:rgba(255,255,255,.18);}
+.turnbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.flipcount{font-size:16px;background:var(--ink);color:#fff;padding:8px 12px;border:3px solid var(--ink);
+  box-shadow:inset 2px 2px 0 rgba(255,255,255,.15);}
+.flipcount b{color:var(--gold);}
+.msg{flex:1 1 100%;text-align:center;font-size:15px;min-height:22px;color:#fff;
+  text-shadow:2px 2px 0 var(--ink);}
+
+.board{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px;
+}
+@media(min-width:560px){.board{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));}}
+
+.card{aspect-ratio:3/4.2;perspective:600px;cursor:pointer;}
+.card .inner{position:relative;width:100%;height:100%;transition:transform .35s;transform-style:preserve-3d;}
+.card.up .inner,.card.matched .inner{transform:rotateY(180deg);}
+.card .face{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border:3px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:inset -3px -3px 0 rgba(0,0,0,.25),inset 3px 3px 0 rgba(255,255,255,.25);overflow:hidden;
+}
+/* back (celadon) */
+.card .back{
+  background:linear-gradient(160deg,var(--teal-l),var(--teal) 40%,var(--teal-d));
+  color:#dff0e8;gap:2px;padding:4px;
+}
+.card .back .topline{font-size:8px;color:#bfe0cf;letter-spacing:0;}
+.card .back .vbox{width:58%;margin:2px 0;}
+.card .back .botline{font-size:9px;line-height:1.15;text-align:center;color:#eafff2;
+  text-shadow:1px 1px 0 var(--teal-d);}
+/* front (term revealed) */
+.card .front{
+  transform:rotateY(180deg);background:linear-gradient(180deg,#fff,var(--paper-d));
+  color:var(--ink);padding:4px;
+}
+.card .front .term{font-size:clamp(15px,4.4vw,22px);text-align:center;line-height:1.15;
+  word-break:keep-all;text-shadow:1px 1px 0 #fff;}
+.card .front .ctag{position:absolute;top:3px;left:0;right:0;text-align:center;font-size:9px;color:#8a84a0;}
+.card.decoy .front{background:linear-gradient(180deg,#f1f1f6,#dcdce6);}
+.card.matched .front{background:linear-gradient(180deg,#dff7e4,#bfeccb);}
+.card.matched .front::after{content:"✓";position:absolute;bottom:2px;right:5px;color:var(--green-d);font-size:16px;}
+.card.matched{animation:matchpop .45s;}
+@keyframes matchpop{0%{transform:scale(1);}35%{transform:scale(1.12) rotate(-2deg);}100%{transform:scale(1);}}
+.card.matched{pointer-events:none;}
+.card.disabled{pointer-events:none;}
+.card.hint .inner{animation:wob .6s;}
+@keyframes wob{0%,100%{transform:none;}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+
+/* manual-selection states */
+.card.sel{outline:5px solid var(--gold);outline-offset:3px;border-radius:2px;}
+.card.sel .front{background:linear-gradient(180deg,#fff7d6,#ffe9a8);}
+.dcard.sel{outline:4px solid var(--gold);outline-offset:2px;background:#fffbe8;}
+.card.wrong .inner,.dcard.wrong{animation:shake .42s;}
+.card.wrong .front{background:#ffd9dd!important;}
+.dcard.wrong{background:#ffdfe2!important;border-left-color:var(--red-d)!important;}
+@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+.hearts-mini svg{width:16px;height:16px;}
+.dcard{cursor:pointer;}
+.card.wrong{pointer-events:none;}
+
+/* ===== WIN / REFERENCE MODAL ===== */
+.overlay{position:fixed;inset:0;background:rgba(10,8,24,.72);z-index:50;display:none;
+  align-items:center;justify-content:center;padding:16px;}
+.overlay.show{display:flex;}
+.modal{max-width:520px;width:100%;padding:22px;text-align:center;background:var(--paper);
+  max-height:90vh;overflow:auto;}
+.modal h2{margin:0 0 6px;font-size:30px;color:var(--ink);text-shadow:2px 2px 0 var(--gold);}
+.win-stars{font-size:0;margin:10px 0;}
+.win-stars svg{width:34px;height:34px;margin:0 2px;}
+.win-stat{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:12px 0 18px;font-size:16px;}
+.win-stat div{background:#fff;border:3px solid var(--ink);padding:6px 12px;}
+.modal .btn{margin:6px;}
+
+/* reference table */
+#refScreen{display:none;}
+.reftable{padding:10px;}
+.refgrid{display:grid;grid-template-columns:1fr;gap:8px;}
+@media(min-width:760px){.refgrid{grid-template-columns:1fr 1fr;}}
+.refitem{display:flex;gap:8px;align-items:flex-start;background:var(--paper);border:3px solid var(--ink);
+  padding:8px 10px;box-shadow:inset -2px -2px 0 rgba(0,0,0,.1),inset 2px 2px 0 #fff;}
+.refitem .rt{min-width:80px;font-size:15px;color:var(--teal-d);border-right:3px solid var(--paper-d);padding-right:8px;}
+.refitem .rd{font-size:12px;line-height:1.5;}
+.refhdr{grid-column:1/-1;background:var(--teal);color:#fff;padding:8px;text-align:center;font-size:18px;
+  border:3px solid var(--ink);box-shadow:inset -2px -2px 0 rgba(0,0,0,.2);margin-top:6px;}
+
+.center{text-align:center;}
+.mt{margin-top:14px;}
+.muted{color:#5a5470;font-size:13px;}
+.toolbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 14px;}
+</style>
+</head>
+<body>
+<div class="clouds">
+  <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+</div>
+<div class="ground"></div>
+<div class="flower f1"></div><div class="flower f2"></div>
+
+<div class="app">
+
+  <!-- ===================== START SCREEN ===================== -->
+  <section id="startScreen">
+    <div class="hud pixel">
+      <div class="icons" id="starsL"></div>
+      <div class="title">키워드 메모리 게임</div>
+      <div class="icons" id="heartsR"></div>
+    </div>
+
+    <div class="logo pixel">
+      <div class="era">삼국 &amp; 남북국 &amp; 고려</div>
+      <div class="vase-wrap" id="logoVase"></div>
+      <div class="sub">키워드 메모리 게임</div>
+      <div class="school">[수원중학교] 과거로 떠나는 한국사 수업</div>
+    </div>
+
+    <div class="howto pixel">
+      <h3>＜게임 방법＞</h3>
+      <ol>
+        <li><span class="hi-y">설명 카드</span>를 손에 들고, <span class="hi-b">용어 카드</span>는 뒷면이 보이게 뒤집어 둡니다.</li>
+        <li>내 차례에 용어 카드를 <b>최대 4장</b>까지 뒤집어요.</li>
+        <li>뒤집은 용어 카드를 내 <b>설명 카드와 직접 짝지어</b> 매칭! 틀리면 체력 ❤이 줄어요.</li>
+        <li>카드 위치를 잘 기억해서, 내 설명 카드를 <b>가장 빨리 모두 매칭</b>하면 승리!</li>
+      </ol>
+    </div>
+
+    <div class="panel pixel">
+      <h3>1. 분야 고르기</h3>
+      <div class="choices" id="catChoices">
+        <button class="choice on" data-cat="전체">전체<small>인물+통치기구 (34)</small></button>
+        <button class="choice" data-cat="인물">인물<small>학자·승려·왕 등 (18)</small></button>
+        <button class="choice" data-cat="통치기구">통치기구<small>고려의 조직 (16)</small></button>
+      </div>
+    </div>
+
+    <div class="panel pixel">
+      <h3>2. 난이도 고르기</h3>
+      <div class="choices" id="diffChoices">
+        <button class="choice" data-diff="easy">쉬움<small>설명카드 6장</small></button>
+        <button class="choice on" data-diff="normal">보통<small>설명카드 9장</small></button>
+        <button class="choice" data-diff="hard">어려움<small>설명카드 12장</small></button>
+      </div>
+      <p class="muted center mt">설명카드 외의 용어 카드는 다른 친구의 카드(미끼)예요. 위치를 잘 기억하세요!</p>
+    </div>
+
+    <div class="panel pixel">
+      <h3>3. 매칭 방식 고르기</h3>
+      <div class="choices" id="modeChoices">
+        <button class="choice on" data-match-mode="manual">직접 지정<small>학생이 짝을 골라요<br>(틀리면 체력 ❤ 감소)</small></button>
+        <button class="choice" data-match-mode="auto">자동<small>뒤집으면 자동 매칭<br>(저학년·연습용)</small></button>
+      </div>
+    </div>
+
+    <div class="start-actions">
+      <button class="btn alt" style="font-size:24px;padding:16px 40px" id="startBtn">▶ 게임 시작</button>
+      <button class="btn blue sm" id="refBtn">📖 카드 도감 보기</button>
+      <label class="muted" style="display:flex;gap:6px;align-items:center;cursor:pointer">
+        <input type="checkbox" id="soundChk" checked> 효과음
+      </label>
+    </div>
+  </section>
+
+  <!-- ===================== GAME SCREEN ===================== -->
+  <section id="gameScreen">
+    <div class="hud pixel">
+      <div class="icons" id="starsL2"></div>
+      <div class="title">키워드 메모리 게임</div>
+      <div class="icons" id="heartsR2"></div>
+    </div>
+
+    <div class="stats pixel">
+      <div class="stat"><b>매칭</b><span id="stMatch">0 / 0</span></div>
+      <div class="stat"><b>턴</b><span id="stTurn">0</span></div>
+      <div class="stat"><b>뒤집은 횟수</b><span id="stFlip">0</span></div>
+      <div class="stat"><b>시간</b><span id="stTime">00:00</span></div>
+      <div class="stat" id="heartsStat"><b>체력</b><span id="stHearts" class="hearts-mini"></span></div>
+    </div>
+
+    <div class="layout">
+      <aside class="hand pixel">
+        <h3>📜 내 설명 카드</h3>
+        <div class="handlist" id="handList"></div>
+      </aside>
+
+      <main class="boardwrap pixel">
+        <div class="turnbar">
+          <div class="flipcount">이번 턴 <b id="turnFlip">0</b> / 4</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn sm" id="endTurnBtn">턴 넘기기 ⟳</button>
+            <button class="btn red sm" id="quitBtn">나가기</button>
+          </div>
+          <div class="msg" id="boardMsg">용어 카드를 4장 뒤집어 보세요!</div>
+        </div>
+        <div class="board" id="board"></div>
+      </main>
+    </div>
+  </section>
+
+  <!-- ===================== REFERENCE SCREEN ===================== -->
+  <section id="refScreen">
+    <div class="hud pixel">
+      <div class="icons" id="starsL3"></div>
+      <div class="title">카드 도감</div>
+      <div class="icons" id="heartsR3"></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn blue sm" id="refBack">◀ 처음으로</button>
+    </div>
+    <div class="reftable pixel">
+      <div class="refgrid" id="refGrid"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===================== OVERLAY (WIN) ===================== -->
+<div class="overlay" id="winOverlay">
+  <div class="modal pixel">
+    <h2 id="winTitle">🎉 우승! 🎉</h2>
+    <p class="muted" id="winSub">내 설명 카드를 모두 매칭했어요!</p>
+    <div class="win-stars" id="winStars"></div>
+    <div class="win-stat">
+      <div>턴 <b id="winTurn">0</b></div>
+      <div>뒤집기 <b id="winFlip">0</b></div>
+      <div>시간 <b id="winTime">00:00</b></div>
+      <div id="winMistakeWrap">실수 <b id="winMistake">0</b></div>
+    </div>
+    <div>
+      <button class="btn alt" id="winAgain">다시 하기</button>
+      <button class="btn blue" id="winHome">처음으로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const CARD_DATA = [
+  { cat:"인물", term:"강수", desc:"외교 문서의 작성에 능숙한 통일 신라의 학자" },
+  { cat:"인물", term:"설총", desc:"이두를 체계적으로 정리한 통일 신라의 학자" },
+  { cat:"인물", term:"김대문", desc:"신라의 문화를 주체적으로 인식한 통일 신라의 학자" },
+  { cat:"인물", term:"최치원", desc:"시무 10여 조를 건의한 통일 신라의 학자" },
+  { cat:"인물", term:"원효", desc:"일심 사상을 바탕으로 화쟁 사상을 주장하고 아미타 신앙을 전파한 통일 신라의 승려" },
+  { cat:"인물", term:"의상", desc:"화엄 사상을 주장하고 관음 신앙을 전파한 통일 신라의 승려" },
+  { cat:"인물", term:"혜초", desc:"왕오천축국전을 저술한 통일 신라의 승려" },
+  { cat:"인물", term:"담징", desc:"종이와 먹 제조술을 일본에 전파해 준 고구려 사람" },
+  { cat:"인물", term:"혜자", desc:"쇼토쿠 태자의 스승으로 활동한 고구려 사람" },
+  { cat:"인물", term:"아직기·왕인", desc:"한문과 논어를 일본에 전파해 준 백제 사람" },
+  { cat:"인물", term:"노리사치계", desc:"불교를 일본에 전파해 준 백제 사람" },
+  { cat:"인물", term:"태조", desc:"고려를 건국한 사람! 사심관 제도, 기인 제도 등을 실시함." },
+  { cat:"인물", term:"광종", desc:"공신과 호족을 숙청한 사람! 노비안검법, 과거제를 시행함." },
+  { cat:"인물", term:"성종", desc:"최승로의 시무 28조를 받아들여 유교 정치 이념을 채택한 사람! 12목에 지방관을 파견함." },
+  { cat:"인물", term:"이자겸", desc:"경원 이씨 가문으로 왕실과의 거듭된 혼인을 통해 유력한 외척으로 성장한 사람. 척준경과 함께 반란함." },
+  { cat:"인물", term:"묘청", desc:"서경 세력의 대표 인물로 풍수지리설을 기반으로 서경 천도를 주장함." },
+  { cat:"인물", term:"망이·망소이", desc:"정중부 시기 공주 명학소에서 난을 일으킨 형제들" },
+  { cat:"인물", term:"만적", desc:"최충헌의 사노 출신으로 신분 해방을 목적으로 봉기를 계획했던 사람" },
+  { cat:"통치기구", term:"중서문하성", desc:"국가 정책을 논의하여 결정하는 최고 기구. 재신과 낭사로 구성되어 있음." },
+  { cat:"통치기구", term:"상서성", desc:"국가 정책을 집행하는 기구! 아래에 6부를 두고 있음." },
+  { cat:"통치기구", term:"중추원", desc:"군사 기밀과 왕명 출납을 담당하는 기구! 추밀과 승선으로 구성되어 있음." },
+  { cat:"통치기구", term:"어사대", desc:"관리의 비리를 살피고 정치의 잘잘못을 논의함." },
+  { cat:"통치기구", term:"삼사", desc:"국가 재정의 출납과 회계를 담당하는 기구" },
+  { cat:"통치기구", term:"도병마사", desc:"고려의 독자적인 기구! 주로 국방·군사 문제를 논의함." },
+  { cat:"통치기구", term:"식목도감", desc:"고려의 독자적인 기구! 주로 제도와 시행 규칙을 논의함." },
+  { cat:"통치기구", term:"대간", desc:"간쟁·봉박·서경의 권한을 가지는 조직. 낭사와 어사대로 구성되어 있음." },
+  { cat:"통치기구", term:"5도", desc:"일반 행정 구역으로서 안찰사를 파견함. 아래에 주·군·현이 있음. 주현이 주도함." },
+  { cat:"통치기구", term:"양계", desc:"군사 행정 구역으로 병마사를 파견함. 국방상 요충지에 진을 설치함. 주진군이 주도함." },
+  { cat:"통치기구", term:"중방", desc:"무신들의 회의 기구" },
+  { cat:"통치기구", term:"교정도감", desc:"무신 집권 시기 국정을 총괄하는 최고 권력 기구" },
+  { cat:"통치기구", term:"정방", desc:"무신 집권 시기 관리의 인사 행정을 담당하는 기구" },
+  { cat:"통치기구", term:"서방", desc:"무신 집권 시기 문신의 숙위 기구" },
+  { cat:"통치기구", term:"도방", desc:"무신 집권자의 사병 조직" },
+  { cat:"통치기구", term:"삼별초", desc:"좌별초·우별초·신의군으로 구성된 군대" },
+];
+
+/* ===================== PIXEL ICONS (SVG) ===================== */
+const STAR = (on=true)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9l6.9-.7z"
+  fill="${on?'#ffd23d':'#5a6a8a'}" stroke="#181429" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+const HEART = (on=true)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21S3.5 14.5 3.5 8.6C3.5 5.7 5.7 4 8 4c1.7 0 3.2 1 4 2.4C12.8 5 14.3 4 16 4c2.3 0 4.5 1.7 4.5 4.6C20.5 14.5 12 21 12 21z"
+  fill="${on?'#ff5160':'#5a6a8a'}" stroke="#181429" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
+const VASE = `<svg viewBox="0 0 100 150" aria-hidden="true" style="width:100%;display:block">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#bfe3cd"/>
+  <stop offset=".5" stop-color="#9fcab2"/><stop offset="1" stop-color="#6fa589"/></linearGradient></defs>
+  <path d="M40 18 Q40 13 50 13 Q60 13 60 18 L60 25 Q80 35 82 66 Q82 112 50 140 Q18 112 18 66 Q20 35 40 25 Z"
+    fill="url(#g)" stroke="#234f4b" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="50" cy="60" rx="6" ry="6" fill="#5b8a72"/>
+  <ellipse cx="36" cy="78" rx="5" ry="5" fill="#5b8a72"/>
+  <ellipse cx="64" cy="78" rx="5" ry="5" fill="#5b8a72"/>
+  <ellipse cx="50" cy="96" rx="5" ry="5" fill="#5b8a72"/>
+  <path d="M44 16 Q50 19 56 16" fill="none" stroke="#234f4b" stroke-width="2"/>
+</svg>`;
+
+/* ===================== SOUND ===================== */
+let actx=null, soundOn=true;
+function beep(freq,dur=0.08,type="square",vol=0.05){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(vol,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
+    o.start(); o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+const sFlip =()=>beep(440,0.06,"square");
+const sMatch=()=>{beep(660,0.08);setTimeout(()=>beep(880,0.1),70);};
+const sNope =()=>beep(180,0.12,"sawtooth",0.04);
+const sWin  =()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.16,"square",0.06),i*120));};
+
+/* ===================== STATE ===================== */
+const DIFF = { easy:{board:12,hand:6}, normal:{board:20,hand:9}, hard:{board:34,hand:12} };
+let sel = { cat:"전체", diff:"normal", matchMode:"manual" };
+let game = null;
+let timerId = null;
+
+/* ===================== HELPERS ===================== */
+const $ = s=>document.querySelector(s);
+const $$ = s=>document.querySelectorAll(s);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function show(id){["startScreen","gameScreen","refScreen"].forEach(s=>$("#"+s).style.display = (s===id?"block":"none"));}
+function fmt(t){const m=Math.floor(t/60),s=t%60;return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");}
+
+/* fill chrome icons */
+function fillChrome(){
+  const stars=Array(5).fill(STAR(true)).join("");
+  const hearts=Array(5).fill(HEART(true)).join("");
+  ["#starsL","#starsL2","#starsL3"].forEach(s=>$(s).innerHTML=stars);
+  ["#heartsR","#heartsR2","#heartsR3"].forEach(s=>$(s).innerHTML=hearts);
+  $("#logoVase").innerHTML=VASE;
+}
+
+/* ===================== START SCREEN WIRING ===================== */
+function wireChoices(containerSel,key){
+  $$(containerSel+" .choice").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      $$(containerSel+" .choice").forEach(b=>b.classList.remove("on"));
+      btn.classList.add("on");
+      sel[key]=btn.dataset[key];
+    });
+  });
+}
+
+/* ===================== BUILD GAME ===================== */
+function newGame(){
+  const pool = sel.cat==="전체" ? CARD_DATA.slice() : CARD_DATA.filter(c=>c.cat===sel.cat);
+  const conf = DIFF[sel.diff];
+  const boardN = Math.min(conf.board, pool.length);
+  const handN  = Math.min(conf.hand, boardN);
+
+  // pick board pairs, then hand subset among them
+  const boardPairs = shuffle(pool).slice(0, boardN);
+  const handPairs  = shuffle(boardPairs).slice(0, handN);
+  const handSet = new Set(handPairs.map(p=>p.term));
+
+  // board cells (term cards), shuffled positions
+  const cells = shuffle(boardPairs).map((p,i)=>({
+    id:i, term:p.term, cat:p.cat, isTarget:handSet.has(p.term), state:"down"
+  }));
+
+  game = {
+    cells, handPairs, handSet,
+    matched:new Set(),     // matched terms
+    flipped:[],            // positions up this turn (not matched)
+    turn:0, flips:0, time:0, started:false, locked:false,
+    targetCount:handN,
+    maxHearts:5, hearts:5, mistakes:0,
+    selTerm:null, selDesc:null
+  };
+  // manual mode uses hearts as lives; show the 체력 stat
+  const manual = sel.matchMode==="manual";
+  $("#heartsStat").style.display = manual ? "" : "none";
+  renderHand(); renderBoard(); renderHearts(); updateStats();
+  $("#boardMsg").textContent = manual
+    ? "용어 카드를 뒤집고, 설명 카드와 직접 짝지어 보세요!"
+    : "용어 카드를 4장 뒤집어 보세요!";
+  $("#turnFlip").textContent="0";
+  stopTimer();
+  show("gameScreen");
+}
+
+function renderHand(){
+  const wrap=$("#handList"); wrap.innerHTML="";
+  // sort hand: undone first
+  game.handPairs.forEach(p=>{
+    const done=game.matched.has(p.term);
+    const el=document.createElement("div");
+    el.className="dcard cat-"+p.cat+(done?" done":"");
+    el.dataset.term=p.term;
+    el.innerHTML=`<div class="tag">${p.cat}</div>${p.desc}<div class="answer">➜ ${p.term}</div>`;
+    el.addEventListener("click",()=>{ if(sel.matchMode==="manual") selectDesc(p.term); });
+    wrap.appendChild(el);
+  });
+}
+
+function renderBoard(){
+  const b=$("#board"); b.innerHTML="";
+  game.cells.forEach(c=>{
+    const el=document.createElement("div");
+    el.className="card";
+    el.dataset.id=c.id;
+    el.innerHTML=`
+      <div class="inner">
+        <div class="face back">
+          <div class="topline">한국사</div>
+          <div class="vbox">${VASE}</div>
+          <div class="botline">키워드<br>메모리</div>
+        </div>
+        <div class="face front">
+          <div class="ctag">${c.cat}</div>
+          <div class="term">${c.term}</div>
+        </div>
+      </div>`;
+    el.addEventListener("click",()=>onCardClick(c.id));
+    b.appendChild(el);
+  });
+}
+
+function cardEl(id){return $('.card[data-id="'+id+'"]');}
+
+/* ===================== TURN LOGIC ===================== */
+/* dispatch: down card -> flip ; up card (manual) -> select */
+function onCardClick(id){
+  if(game.locked) return;
+  const c=game.cells[id];
+  if(c.state==="down"){ flipCard(id); }
+  else if(c.state==="up" && sel.matchMode==="manual"){ selectTerm(id); }
+}
+
+function flipCard(id){
+  const c=game.cells[id];
+  if(c.state!=="down") return;
+  if(game.flips>=4){
+    $("#boardMsg").textContent="이번 턴은 4장까지! 짝을 짓거나 ⟳턴 넘기기를 누르세요.";
+    return;
+  }
+  if(!game.started){game.started=true;startTimer();}
+  c.state="up";
+  game.flips++; _flipCounter++;
+  $("#turnFlip").textContent=game.flips;
+  const el=cardEl(id);
+  el.classList.add("up");
+  game.flipped.push(id);
+  sFlip();
+
+  if(sel.matchMode==="auto"){
+    if(c.isTarget && !game.matched.has(c.term)){
+      doMatch(id, c.term);
+    }else{
+      el.classList.add("decoy");
+      $("#boardMsg").textContent = c.isTarget ? "" : "내 카드가 아니에요. 위치를 기억!";
+    }
+    if(game.flips>=4 && game.matched.size<game.targetCount){
+      game.locked=true;
+      $("#boardMsg").textContent="이번 턴 끝! 안 맞은 카드는 곧 뒤집힙니다…";
+      setTimeout(endTurn,1300);
+    }
+  }else{
+    $("#boardMsg").textContent = game.flips>=4
+      ? "4장 뒤집기 완료! 용어 카드와 설명 카드를 짝지어 보세요."
+      : "용어 카드를 누른 뒤, 짝이 되는 설명 카드를 누르세요.";
+  }
+}
+
+/* lock a correct pair */
+function doMatch(id, term){
+  const c=game.cells[id];
+  game.matched.add(term);
+  c.state="matched";
+  const el=cardEl(id);
+  el.classList.remove("up","decoy","sel");
+  el.classList.add("matched");
+  sMatch();
+  let d=null; $$('.dcard').forEach(x=>{ if(x.dataset.term===term) d=x; });
+  if(d){ d.classList.add("done","hl"); setTimeout(()=>d.classList.remove("hl"),500); $("#handList").appendChild(d); }
+  $("#boardMsg").textContent="✨ 매칭 성공! "+term;
+  updateStats();
+  if(game.matched.size>=game.targetCount){ winGame(); return true; }
+  return false;
+}
+
+/* ---------- manual selection ---------- */
+function selectTerm(id){
+  const c=game.cells[id];
+  if(c.state!=="up") return;
+  if(game.selTerm===id){ game.selTerm=null; cardEl(id).classList.remove("sel"); return; }
+  if(game.selTerm!=null){ const p=cardEl(game.selTerm); if(p) p.classList.remove("sel"); }
+  game.selTerm=id; cardEl(id).classList.add("sel"); beep(520,0.05);
+  if(game.selDesc!=null) tryManualMatch();
+}
+function selectDesc(term){
+  if(game.locked) return;
+  if(game.matched.has(term)) return;
+  if(game.selDesc===term){ game.selDesc=null; markDescSel(term,false); return; }
+  if(game.selDesc!=null) markDescSel(game.selDesc,false);
+  game.selDesc=term; markDescSel(term,true); beep(520,0.05);
+  if(game.selTerm!=null) tryManualMatch();
+}
+function markDescSel(term,on){ $$('.dcard').forEach(x=>{ if(x.dataset.term===term) x.classList.toggle("sel",on); }); }
+
+function tryManualMatch(){
+  const id=game.selTerm, descTerm=game.selDesc;
+  if(id==null || descTerm==null) return;
+  const c=game.cells[id];
+  const termEl=cardEl(id);
+  let d=null; $$('.dcard').forEach(x=>{ if(x.dataset.term===descTerm) d=x; });
+
+  // clear selection visuals first
+  termEl.classList.remove("sel");
+  markDescSel(descTerm,false);
+  game.selTerm=null; game.selDesc=null;
+
+  if(c.term===descTerm){
+    doMatch(id, c.term);
+  }else{
+    sNope();
+    game.mistakes++;
+    termEl.classList.add("wrong"); if(d) d.classList.add("wrong");
+    setTimeout(()=>{ termEl.classList.remove("wrong"); if(d) d.classList.remove("wrong"); },450);
+    $("#boardMsg").textContent="땡! 짝이 아니에요.  체력 -1 ❤";
+    loseHeart();
+  }
+}
+
+/* ---------- hearts / game over ---------- */
+function loseHeart(){
+  game.hearts = Math.max(0, game.hearts-1);
+  renderHearts();
+  if(game.hearts<=0) gameOver();
+}
+function renderHearts(){
+  const html=Array.from({length:game.maxHearts},(_,i)=>HEART(i<game.hearts)).join("");
+  $("#heartsR2").innerHTML=html;
+  const sh=$("#stHearts"); if(sh) sh.innerHTML=html;
+}
+function gameOver(){
+  stopTimer(); game.locked=true;
+  beep(160,0.3,"sawtooth",0.05); setTimeout(()=>beep(110,0.4,"sawtooth",0.05),180);
+  $("#overMatch").textContent=game.matched.size+" / "+game.targetCount;
+  $("#overTurn").textContent=game.turn;
+  $$(".dcard").forEach(d=>d.classList.add("done")); // reveal answers
+  setTimeout(()=>$("#overOverlay").classList.add("show"),450);
+}
+
+function endTurn(){
+  // clear any selection
+  if(game.selTerm!=null){ const e=cardEl(game.selTerm); if(e) e.classList.remove("sel"); }
+  if(game.selDesc!=null) markDescSel(game.selDesc,false);
+  game.selTerm=null; game.selDesc=null;
+  // flip back non-matched
+  game.flipped.forEach(id=>{
+    const c=game.cells[id];
+    if(c.state==="up"){c.state="down";const el=cardEl(id);el.classList.remove("up","decoy","sel");}
+  });
+  game.flipped=[];
+  game.flips=0;
+  game.turn++;
+  game.locked=false;
+  $("#turnFlip").textContent="0";
+  $("#boardMsg").textContent = sel.matchMode==="manual"
+    ? "다음 턴! 카드를 뒤집고 설명과 짝지으세요."
+    : "다음 턴! 카드를 4장 뒤집어 보세요.";
+  updateStats();
+}
+
+function manualEndTurn(){
+  if(game.locked) return;
+  if(game.flips===0){$("#boardMsg").textContent="먼저 용어 카드를 뒤집어 주세요!";return;}
+  game.locked=true; endTurn();
+}
+
+/* ===================== STATS / TIMER ===================== */
+let _flipCounter=0;
+function updateStats(){
+  $("#stMatch").textContent=game.matched.size+" / "+game.targetCount;
+  $("#stTurn").textContent=game.turn;
+  $("#stFlip").textContent=_flipCounter;
+  $("#stTime").textContent=fmt(game.time);
+}
+function startTimer(){
+  stopTimer();
+  timerId=setInterval(()=>{game.time++;$("#stTime").textContent=fmt(game.time);},1000);
+}
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null;}}
+
+/* ===================== WIN ===================== */
+function winGame(){
+  stopTimer();
+  game.locked=true;
+  sWin();
+  const t=game.turn+ (game.flips>0?1:0);
+  let stars;
+  if(sel.matchMode==="manual"){
+    // rating reflects content knowledge: fewer mistakes = more stars
+    const m=game.mistakes;
+    stars = m===0?5 : m<=2?4 : m<=4?3 : m<=7?2 : 1;
+  }else{
+    const ideal=Math.ceil(game.targetCount/4);
+    stars = t<=ideal+1?5 : t<=ideal+3?4 : t<=ideal+6?3 : t<=ideal+10?2 : 1;
+  }
+  $("#winStars").innerHTML=Array.from({length:5},(_,i)=>STAR(i<stars)).join("");
+  $("#winTurn").textContent=t;
+  $("#winFlip").textContent=_flipCounter;
+  $("#winTime").textContent=fmt(game.time);
+  $("#winMistakeWrap").style.display = sel.matchMode==="manual" ? "" : "none";
+  $("#winMistake").textContent=game.mistakes;
+  // reveal answers in hand
+  $$(".dcard").forEach(d=>d.classList.add("done"));
+  setTimeout(()=>$("#winOverlay").classList.add("show"),600);
+}
+
+/* ===================== REFERENCE ===================== */
+function buildRef(){
+  const grid=$("#refGrid"); grid.innerHTML="";
+  const groups=[["인물","👤 인물"],["통치기구","🏛 통치 기구(조직)"]];
+  groups.forEach(([cat,label])=>{
+    const h=document.createElement("div");
+    h.className="refhdr"; h.textContent=label; grid.appendChild(h);
+    CARD_DATA.filter(c=>c.cat===cat).forEach(c=>{
+      const el=document.createElement("div");
+      el.className="refitem";
+      el.innerHTML=`<div class="rt">${c.term}</div><div class="rd">${c.desc}</div>`;
+      grid.appendChild(el);
+    });
+  });
+}
+
+/* ===================== INIT ===================== */
+function init(){
+  fillChrome();
+  wireChoices("#catChoices","cat");
+  wireChoices("#diffChoices","diff");
+  wireChoices("#modeChoices","matchMode");
+  buildRef();
+
+  $("#startBtn").addEventListener("click",()=>{ _flipCounter=0; newGame(); });
+  $("#refBtn").addEventListener("click",()=>{show("refScreen");});
+  $("#refBack").addEventListener("click",()=>{show("startScreen");});
+  $("#endTurnBtn").addEventListener("click",manualEndTurn);
+  $("#quitBtn").addEventListener("click",()=>{stopTimer();show("startScreen");});
+  $("#winAgain").addEventListener("click",()=>{$("#winOverlay").classList.remove("show");_flipCounter=0;newGame();});
+  $("#winHome").addEventListener("click",()=>{$("#winOverlay").classList.remove("show");show("startScreen");});
+  $("#overAgain").addEventListener("click",()=>{$("#overOverlay").classList.remove("show");_flipCounter=0;newGame();});
+  $("#overHome").addEventListener("click",()=>{$("#overOverlay").classList.remove("show");show("startScreen");});
+  $("#overRef").addEventListener("click",()=>{$("#overOverlay").classList.remove("show");show("refScreen");});
+  $("#soundChk").addEventListener("change",e=>{soundOn=e.target.checked;});
+}
+
+window.addEventListener("DOMContentLoaded",init);
+</script>
+<!-- ===================== OVERLAY (GAME OVER) ===================== -->
+<div class="overlay" id="overOverlay">
+  <div class="modal pixel">
+    <h2 style="text-shadow:2px 2px 0 var(--red)">💔 게임 오버 💔</h2>
+    <p class="muted">체력을 모두 잃었어요. 카드의 짝을 다시 떠올려 볼까요?</p>
+    <div class="win-stat">
+      <div>매칭 <b id="overMatch">0 / 0</b></div>
+      <div>턴 <b id="overTurn">0</b></div>
+    </div>
+    <div>
+      <button class="btn alt" id="overAgain">다시 도전</button>
+      <button class="btn blue" id="overHome">처음으로</button>
+      <button class="btn sm" id="overRef">📖 도감 보기</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
