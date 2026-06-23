@@ -334,8 +334,8 @@ body{
     <div class="panel pixel">
       <h3>3. 매칭 방식 고르기</h3>
       <div class="choices" id="modeChoices">
-        <button class="choice on" data-match-mode="manual">직접 지정<small>학생이 짝을 골라요<br>(틀리면 체력 ❤ 감소)</small></button>
-        <button class="choice" data-match-mode="auto">자동<small>뒤집으면 자동 매칭<br>(연습용)</small></button>
+        <button class="choice on" data-match-mode="manual">직접 지정<small>용어 카드와 설명 카드 직접 매칭<br>(틀리면 체력 ❤ 감소)</small></button>
+        <button class="choice" data-match-mode="auto">자동<small>용어 카드를 뒤집으면 설명 카드와 자동 매칭<br>(연습용)</small></button>
       </div>
     </div>
 
@@ -440,17 +440,17 @@ const CARD_DATA = [
   { cat:"인물", term:"이자겸", desc:"경원 이씨 가문으로 왕실과의 거듭된 혼인을 통해 유력한 외척으로 성장한 사람. 척준경과 함께 반란함." },
   { cat:"인물", term:"묘청", desc:"서경 세력의 대표 인물로 풍수지리설을 기반으로 서경 천도를 주장함." },
   { cat:"인물", term:"망이·망소이", desc:"정중부 시기 공주 명학소에서 난을 일으킨 형제들" },
-  { cat:"인물", term:"만적", desc:"최충헌의 사노 출신으로 신분 해방을 목적으로 봉기를 계획했던 사람" },
-  { cat:"통치기구", term:"중서문하성", desc:"국가 정책을 논의하여 결정하는 최고 기구. 재신과 낭사로 구성되어 있음." },
-  { cat:"통치기구", term:"상서성", desc:"국가 정책을 집행하는 기구! 아래에 6부를 두고 있음." },
-  { cat:"통치기구", term:"중추원", desc:"군사 기밀과 왕명 출납을 담당하는 기구! 추밀과 승선으로 구성되어 있음." },
-  { cat:"통치기구", term:"어사대", desc:"관리의 비리를 살피고 정치의 잘잘못을 논의함." },
-  { cat:"통치기구", term:"삼사", desc:"국가 재정의 출납과 회계를 담당하는 기구" },
+  { cat:"인물", term:"만적", desc:"최충헌의 노비 출신으로 신분 해방을 목적으로 봉기를 계획했던 사람" },
+  { cat:"통치기구", term:"중서문하성", desc:"국가 정책을 논의하여 결정하는 고려의 최고 기구. 재신과 낭사로 구성되어 있음." },
+  { cat:"통치기구", term:"상서성", desc:"국가 정책을 집행하는 고려의 기구! 아래에 6부를 두고 있음." },
+  { cat:"통치기구", term:"중추원", desc:"군사 기밀과 왕명 출납을 담당하는 고려의 기구! 추밀과 승선으로 구성되어 있음." },
+  { cat:"통치기구", term:"어사대", desc:"관리의 비리를 살피고 정치의 잘잘못을 논의하는 고려의 감찰 기구." },
+  { cat:"통치기구", term:"삼사", desc:"국가 재정의 출납과 회계를 담당하는 고려의 기구" },
   { cat:"통치기구", term:"도병마사", desc:"고려의 독자적인 기구! 주로 국방·군사 문제를 논의함." },
   { cat:"통치기구", term:"식목도감", desc:"고려의 독자적인 기구! 주로 제도와 시행 규칙을 논의함." },
-  { cat:"통치기구", term:"대간", desc:"간쟁·봉박·서경의 권한을 가지는 조직. 낭사와 어사대로 구성되어 있음." },
+  { cat:"통치기구", term:"대간", desc:"간쟁·봉박·서경의 권한을 가지는 고려의 조직. 낭사와 어사대로 구성되어 있음." },
   { cat:"통치기구", term:"5도", desc:"일반 행정 구역으로서 안찰사를 파견함. 아래에 주·군·현이 있음. 주현군이 주둔함." },
-  { cat:"통치기구", term:"양계", desc:"군사 행정 구역으로 병마사를 파견함. 국방상 요충지에 진을 설치함. 주진군이 주도함." },
+  { cat:"통치기구", term:"양계", desc:"군사 행정 구역으로 병마사를 파견함. 국방상 요충지에 진을 설치함. 주진군이 주둔함." },
   { cat:"통치기구", term:"중방", desc:"무신들의 회의 기구" },
   { cat:"통치기구", term:"교정도감", desc:"무신 집권 시기 국정을 총괄하는 최고 권력 기구" },
   { cat:"통치기구", term:"정방", desc:"무신 집권 시기 관리의 인사 행정을 담당하는 기구" },
@@ -634,7 +634,7 @@ function flipCard(id){
       doMatch(id, c.term);
     }else{
       el.classList.add("decoy");
-      $("#boardMsg").textContent = c.isTarget ? "" : "내 카드가 아니에요. 위치를 기억!";
+      $("#boardMsg").textContent = c.isTarget ? "" : "내 카드가 아니에요.";
     }
     if(game.flips>=4 && game.matched.size<game.targetCount){
       game.locked=true;
